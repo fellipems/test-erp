@@ -1,8 +1,10 @@
 package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.ProductDTO;
+import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
 import com.prova.senior.sistemas.nivel1.services.ProductService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,15 @@ public class ProductController {
     public ResponseEntity<List<Product>> findAll() {
         List<Product> allProducts = service.findAll();
         return ResponseEntity.ok().body(allProducts);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<Page<Product>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
     }
 
     @PostMapping

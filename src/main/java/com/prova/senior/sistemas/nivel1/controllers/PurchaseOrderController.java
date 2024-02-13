@@ -1,8 +1,11 @@
 package com.prova.senior.sistemas.nivel1.controllers;
 
+import com.prova.senior.sistemas.nivel1.dtos.OrderStatusDto;
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
 import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
+import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import com.prova.senior.sistemas.nivel1.services.PurchaseOrderService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +26,15 @@ public class PurchaseOrderController {
     public ResponseEntity<List<PurchaseOrder>> findAll() {
         List<PurchaseOrder> allOrders = service.findAll();
         return ResponseEntity.ok().body(allOrders);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<Page<PurchaseOrder>> findAllPageable(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
     }
 
     @PostMapping
@@ -53,5 +65,10 @@ public class PurchaseOrderController {
     @DeleteMapping("/item/{orderId}")
     public ResponseEntity<PurchaseOrder> removeItemsFromOneOrder(@PathVariable UUID orderId, @RequestBody List<UUID> itemIdsToRemove) {
         return ResponseEntity.ok(service.removeItemsFromOneOrder(orderId, itemIdsToRemove));
+    }
+
+    @PutMapping("/status/{orderId}")
+    public ResponseEntity<String> changeOrderStatus(@PathVariable UUID orderId, @RequestBody OrderStatusDto newOrderStatus) {
+        return ResponseEntity.ok(service.changeOrderStatus(orderId, newOrderStatus));
     }
 }

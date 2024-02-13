@@ -1,6 +1,7 @@
 package com.prova.senior.sistemas.nivel1.entities;
 
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
+import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -21,6 +22,10 @@ public class PurchaseOrder {
 
     @Column
     private BigDecimal totalValue = new BigDecimal("0");
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private OrderStatusEnum orderStatus;
 
     @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Item> items;

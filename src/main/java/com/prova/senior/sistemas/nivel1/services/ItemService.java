@@ -3,14 +3,16 @@ package com.prova.senior.sistemas.nivel1.services;
 import com.prova.senior.sistemas.nivel1.dtos.ItemDto;
 import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
-import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
 import com.prova.senior.sistemas.nivel1.exceptions.ItemNotFoundException;
 import com.prova.senior.sistemas.nivel1.exceptions.ProductNotFoundException;
 import com.prova.senior.sistemas.nivel1.repositories.ItemRepository;
 import com.prova.senior.sistemas.nivel1.repositories.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,5 +73,11 @@ public class ItemService {
         }
 
         return repository.save(oldItem);
+    }
+
+    public Page<Item> findAllPageable(int page, int size, String sortBy, String direction) {
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        return repository.findAll(pageable);
     }
 }

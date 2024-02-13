@@ -3,6 +3,10 @@ package com.prova.senior.sistemas.nivel1.controllers;
 import com.prova.senior.sistemas.nivel1.dtos.ItemDto;
 import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.services.ItemService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +26,15 @@ public class ItemController {
     public ResponseEntity<List<Item>> findAll() {
         List<Item> allItems = service.findAll();
         return ResponseEntity.ok().body(allItems);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<Page<Item>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
     }
 
     @PostMapping

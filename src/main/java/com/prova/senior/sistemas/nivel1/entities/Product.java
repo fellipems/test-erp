@@ -26,6 +26,9 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private Type type;
 
+    @Column(columnDefinition = "boolean default true")
+    private boolean active;
+
     public Product convertToEntity(ProductDTO productToConvert) {
         Product product = new Product();
 

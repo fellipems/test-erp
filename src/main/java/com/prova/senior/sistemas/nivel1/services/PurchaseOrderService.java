@@ -1,14 +1,21 @@
 package com.prova.senior.sistemas.nivel1.services;
 
+import com.prova.senior.sistemas.nivel1.dtos.OrderStatusDto;
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
 import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
 import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
+import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import com.prova.senior.sistemas.nivel1.enums.Type;
-import com.prova.senior.sistemas.nivel1.exceptions.OrderNotFoundException;
+import com.prova.senior.sistemas.nivel1.exceptions.*;
 import com.prova.senior.sistemas.nivel1.repositories.ItemRepository;
 import com.prova.senior.sistemas.nivel1.repositories.ProductRepository;
 import com.prova.senior.sistemas.nivel1.repositories.PurchaseOrderRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -37,18 +44,22 @@ public class PurchaseOrderService {
 
     @Transactional
     public PurchaseOrder create(PurchaseOrderDto newOrder) {
-        List<Item> items;
-
         if (newOrder.getItems().isEmpty()) {
             throw new RuntimeException("pedido sem itens");
         }
 
-        items = new ArrayList<>();
+        List<Item> items = new ArrayList<>();
+        List<String> productsNotActive = new ArrayList<>();
 
         for (Item itemDto : newOrder.getItems()) {
             Optional<Product> product = productRepository.findById(itemDto.getProduct().getId());
 
             if (product.isPresent()) {
+                if (!product.get().isActive()) {
+                    productsNotActive.add(String.format("Id: %s, Nome: %s",product.get().getId(), product.get().getName()));
+                    continue;
+                }
+
                 Item item = new Item();
 
                 item.setProduct(product.get());
@@ -57,6 +68,10 @@ public class PurchaseOrderService {
 
                 items.add(item);
             }
+        }
+
+        if (!productsNotActive.isEmpty()) {
+            throw new ProductsNotActiveOnOrderException(String.format("Produtos %s não estão ativos. Favor remover do pedido para a criação de um novo com produtos ativos", productsNotActive));
         }
 
         newOrder.getItems().clear();
@@ -105,32 +120,105 @@ public class PurchaseOrderService {
     }
 
     public PurchaseOrder update(UUID orderId, PurchaseOrderDto updatedOrderDto) {
-        PurchaseOrder oldOder = repository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Nenhum pedido encontrado com ID " + orderId));
+        PurchaseOrder oldOrder = repository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Nenhum pedido encontrado com ID " + orderId));
 
-        if (!updatedOrderDto.getItems().isEmpty()) {
-            Set<UUID> itemIds = updatedOrderDto.getItems().stream().map(Item::getId).collect(Collectors.toSet());
+        List<Item> newItems = new ArrayList<>();
 
-            List<Item> items = itemRepository.findAllById(itemIds);
+        for (Item itemDto : updatedOrderDto.getItems()) {
+            Optional<Product> product = productRepository.findById(itemDto.getProduct().getId());
 
-//            oldOder.getItems().addAll(items);
+            if (product.isPresent()) {
+                Item item = new Item();
+
+                item.setProduct(product.get());
+                item.setQuantity(itemDto.getQuantity());
+                item.setPurchaseOrder(null);
+
+                newItems.add(item);
+            }
         }
+
+        List<Item> itemsToRemove = new ArrayList<>();
+
+        for (Item oldItem : oldOrder.getItems()) {
+            for (Item newItem : newItems) {
+                if (newItem.getId().equals(oldItem.getId())) {
+                    itemsToRemove.add(oldItem);
+                }
+            }
+        }
+
+        oldOrder.getItems().removeAll(itemsToRemove);
+
+        repository.saveAndFlush(oldOrder);
+
+        for (Item item : newItems) {
+            item.setPurchaseOrder(oldOrder);
+
+            if (oldOrder.getOrderStatus().equals(OrderStatusEnum.OPEN)) {
+                if (item.getProduct().getType().equals(Type.PRODUCT)) {
+                    BigDecimal itemValueDiscount = item.getProduct().getPrice().multiply(oldOrder.getDiscount()
+                            .divide(new BigDecimal("100"))
+                            .multiply(new BigDecimal(item.getQuantity()))).setScale(2, RoundingMode.DOWN);
+
+                    BigDecimal itemProductTotalValueMinusDiscount = item.getProduct().getPrice().subtract(itemValueDiscount);
+
+                    BigDecimal totalValueWithItem = oldOrder.getTotalValue().add(itemProductTotalValueMinusDiscount);
+
+                    oldOrder.setTotalValue(totalValueWithItem);
+                } else {
+                    BigDecimal totalValueWithoutAnyDiscount = oldOrder.getTotalValue().add(item.getProduct().getPrice());
+
+                    oldOrder.setTotalValue(totalValueWithoutAnyDiscount);
+                }
+            }
+        }
+
+        List<Item> savedItems = itemRepository.saveAll(newItems);
+
+        oldOrder.setItems(savedItems);
 
         if (updatedOrderDto.getDiscount() != null) {
-            oldOder.setDiscount(updatedOrderDto.getDiscount().setScale(2, RoundingMode.DOWN));
+            oldOrder.setDiscount(updatedOrderDto.getDiscount().setScale(2, RoundingMode.DOWN));
         }
 
-        return repository.save(oldOder);
+        return repository.save(oldOrder);
     }
 
     public PurchaseOrder removeItemsFromOneOrder(UUID orderId, List<UUID> itemsIdsToRemove) {
         PurchaseOrder order = repository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Nenhum pedido encontrado com ID " + orderId));
 
-//        if (order.getItems().stream().map(Item::getId).noneMatch(itemsIdsToRemove::contains)) {
-//            throw new ItemsToRemoveDontExistsOnOrderException("Id dos itens informados não existem no pedido de Id " + orderId);
-//        }
-//
-//        itemsIdsToRemove.forEach(itemId -> order.getItems().removeIf(item -> item.getId().equals(itemId)));
+        if (order.getItems().stream().map(Item::getId).noneMatch(itemsIdsToRemove::contains)) {
+            throw new ItemsToRemoveDontExistsOnOrderException("Id dos itens informados não existem no pedido de Id " + orderId);
+        }
+
+        itemsIdsToRemove.forEach(itemId -> order.getItems().removeIf(item -> item.getId().equals(itemId)));
 
         return repository.save(order);
+    }
+
+    public Page<PurchaseOrder> findAllPageable(int page, int size, String sortBy, String direction) {
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        return repository.findAll(pageable);
+    }
+
+    public String changeOrderStatus(UUID orderId, OrderStatusDto newOrderStatus) {
+        PurchaseOrder order = repository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Nenhum pedido encontrado com ID " + orderId));
+
+        if (Objects.isNull(newOrderStatus) || Objects.isNull(newOrderStatus.getOrderStatus())) {
+            throw new OrderStatusNotInformedException("Novo status para alteração do pedido não informado");
+        }
+
+        if (newOrderStatus.getOrderStatus().equals(order.getOrderStatus())) {
+            throw new OrderStatusSameException(String.format("Não é possível alterar para o mesmo status. Status atual: %s . Status desejado: %s", order.getOrderStatus(), newOrderStatus));
+        }
+
+        order.setOrderStatus(newOrderStatus.getOrderStatus());
+
+        repository.save(order);
+
+        return "Status alterado com sucesso";
     }
 }

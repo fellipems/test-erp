@@ -2,6 +2,7 @@ package com.prova.senior.sistemas.nivel1.dtos;
 
 import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
+import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -19,4 +20,6 @@ public class PurchaseOrderDto {
     private List<Item> items;
 
     private List<Product> products;
+
+    private OrderStatusEnum orderStatus = OrderStatusEnum.OPEN;
 }
