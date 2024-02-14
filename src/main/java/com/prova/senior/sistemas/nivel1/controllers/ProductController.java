@@ -2,9 +2,7 @@ package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.ProductDTO;
 import com.prova.senior.sistemas.nivel1.dtos.filters.ProductFilterDto;
-import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
-import com.prova.senior.sistemas.nivel1.enums.Type;
 import com.prova.senior.sistemas.nivel1.services.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

@@ -2,11 +2,8 @@ package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.OrderStatusDto;
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
-import com.prova.senior.sistemas.nivel1.dtos.filters.ProductFilterDto;
 import com.prova.senior.sistemas.nivel1.dtos.filters.PurchaseOrderFilterDto;
-import com.prova.senior.sistemas.nivel1.entities.Product;
 import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
-import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import com.prova.senior.sistemas.nivel1.services.PurchaseOrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
