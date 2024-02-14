@@ -1,8 +1,10 @@
 package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.ProductDTO;
+import com.prova.senior.sistemas.nivel1.dtos.filters.ProductFilterDto;
 import com.prova.senior.sistemas.nivel1.entities.Item;
 import com.prova.senior.sistemas.nivel1.entities.Product;
+import com.prova.senior.sistemas.nivel1.enums.Type;
 import com.prova.senior.sistemas.nivel1.services.ProductService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +30,12 @@ public class ProductController {
 
     @GetMapping("/all")
     public ResponseEntity<Page<Product>> findAll(
+            @RequestBody ProductFilterDto productFilter,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
-        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction, productFilter));
     }
 
     @PostMapping

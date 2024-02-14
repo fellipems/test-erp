@@ -1,14 +1,13 @@
-package com.prova.senior.sistemas.nivel1.dtos;
+package com.prova.senior.sistemas.nivel1.dtos.filters;
 
 import com.prova.senior.sistemas.nivel1.enums.Type;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
-public class ProductDTO {
+public class ProductFilterDto {
     private UUID id;
 
     private String name;
@@ -17,5 +16,5 @@ public class ProductDTO {
 
     private Type type;
 
-    private boolean active;
+    private Boolean active;
 }

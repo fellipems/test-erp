@@ -1,7 +1,10 @@
 package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.ItemDto;
+import com.prova.senior.sistemas.nivel1.dtos.filters.ItemFilterDto;
+import com.prova.senior.sistemas.nivel1.dtos.filters.ProductFilterDto;
 import com.prova.senior.sistemas.nivel1.entities.Item;
+import com.prova.senior.sistemas.nivel1.entities.Product;
 import com.prova.senior.sistemas.nivel1.services.ItemService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,11 +33,12 @@ public class ItemController {
 
     @GetMapping("/all")
     public ResponseEntity<Page<Item>> findAll(
+            @RequestBody ItemFilterDto itemFilter,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
-        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction, itemFilter));
     }
 
     @PostMapping

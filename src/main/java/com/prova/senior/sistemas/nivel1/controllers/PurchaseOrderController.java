@@ -2,6 +2,9 @@ package com.prova.senior.sistemas.nivel1.controllers;
 
 import com.prova.senior.sistemas.nivel1.dtos.OrderStatusDto;
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
+import com.prova.senior.sistemas.nivel1.dtos.filters.ProductFilterDto;
+import com.prova.senior.sistemas.nivel1.dtos.filters.PurchaseOrderFilterDto;
+import com.prova.senior.sistemas.nivel1.entities.Product;
 import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
 import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import com.prova.senior.sistemas.nivel1.services.PurchaseOrderService;
@@ -29,12 +32,13 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Page<PurchaseOrder>> findAllPageable(
+    public ResponseEntity<Page<PurchaseOrder>> findAll(
+            @RequestBody PurchaseOrderFilterDto purchaseOrderFilter,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
-        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction));
+        return ResponseEntity.ok().body(service.findAllPageable(page, size, sortBy, direction, purchaseOrderFilter));
     }
 
     @PostMapping

@@ -5,6 +5,8 @@ import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import lombok.Data;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -18,12 +20,15 @@ public class PurchaseOrder {
     private UUID id;
 
     @Column
+    @PositiveOrZero(message = "Desconto informado deve ser maior ou igual a 0")
     private BigDecimal discount = new BigDecimal("0");
 
     @Column
+    @PositiveOrZero(message = "Valor total do pedido deve ser maior ou igual a 0")
     private BigDecimal totalValue = new BigDecimal("0");
 
     @Column
+    @NotBlank(message = "Situação do pedido inválida ou não informada")
     @Enumerated(EnumType.STRING)
     private OrderStatusEnum orderStatus;
 

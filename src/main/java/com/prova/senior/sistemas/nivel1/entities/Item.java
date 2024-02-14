@@ -5,6 +5,9 @@ import com.prova.senior.sistemas.nivel1.dtos.ItemDto;
 import lombok.Data;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.UUID;
 
 @Entity
@@ -15,10 +18,12 @@ public class Item {
     private UUID id;
 
     @Column
+    @Positive(message = "Quantidade informada deve ser maior que zero")
     private int quantity;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id")
+    @NotNull(message = "Produto não informado no item")
     private Product product;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)

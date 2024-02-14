@@ -2,27 +2,27 @@ package com.prova.senior.sistemas.nivel1.services;
 
 import com.prova.senior.sistemas.nivel1.dtos.OrderStatusDto;
 import com.prova.senior.sistemas.nivel1.dtos.PurchaseOrderDto;
-import com.prova.senior.sistemas.nivel1.entities.Item;
-import com.prova.senior.sistemas.nivel1.entities.Product;
-import com.prova.senior.sistemas.nivel1.entities.PurchaseOrder;
+import com.prova.senior.sistemas.nivel1.dtos.filters.PurchaseOrderFilterDto;
+import com.prova.senior.sistemas.nivel1.entities.*;
 import com.prova.senior.sistemas.nivel1.enums.OrderStatusEnum;
 import com.prova.senior.sistemas.nivel1.enums.Type;
 import com.prova.senior.sistemas.nivel1.exceptions.*;
 import com.prova.senior.sistemas.nivel1.repositories.ItemRepository;
 import com.prova.senior.sistemas.nivel1.repositories.ProductRepository;
+import com.prova.senior.sistemas.nivel1.repositories.PurchaseOrderDslRepository;
 import com.prova.senior.sistemas.nivel1.repositories.PurchaseOrderRepository;
+import com.querydsl.core.BooleanBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class PurchaseOrderService {
@@ -32,10 +32,13 @@ public class PurchaseOrderService {
 
     private final ProductRepository productRepository;
 
-    public PurchaseOrderService(PurchaseOrderRepository repository, ItemRepository itemRepository, ItemService itemService, ProductRepository productRepository) {
+    private final PurchaseOrderDslRepository purchaseOrderDslRepository;
+
+    public PurchaseOrderService(PurchaseOrderRepository repository, ItemRepository itemRepository, ProductRepository productRepository, PurchaseOrderDslRepository purchaseOrderDslRepository) {
         this.repository = repository;
         this.itemRepository = itemRepository;
         this.productRepository = productRepository;
+        this.purchaseOrderDslRepository = purchaseOrderDslRepository;
     }
 
     public List<PurchaseOrder> findAll() {
@@ -197,11 +200,21 @@ public class PurchaseOrderService {
         return repository.save(order);
     }
 
-    public Page<PurchaseOrder> findAllPageable(int page, int size, String sortBy, String direction) {
+    public Page<PurchaseOrder> findAllPageable(int page, int size, String sortBy, String direction, PurchaseOrderFilterDto purchaseOrderFilter) {
         Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
-        return repository.findAll(pageable);
+        BooleanBuilder predicateBuilder = new BooleanBuilder();
+
+        if (Objects.nonNull(purchaseOrderFilter.getId())) {
+            predicateBuilder.and(QPurchaseOrder.purchaseOrder.id.eq(purchaseOrderFilter.getId()));
+        }
+
+        if (Objects.nonNull(purchaseOrderFilter.getOrderStatus()) && StringUtils.hasText(purchaseOrderFilter.getOrderStatus().name())) {
+            predicateBuilder.and(QPurchaseOrder.purchaseOrder.orderStatus.eq(purchaseOrderFilter.getOrderStatus()));
+        }
+
+        return purchaseOrderDslRepository.findAll(predicateBuilder, pageable);
     }
 
     public String changeOrderStatus(UUID orderId, OrderStatusDto newOrderStatus) {
